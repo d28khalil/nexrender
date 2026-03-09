@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log
+.git
+.github
+*.md
+LICENSE
+.eslintrc.js
+.editorconfig
+.prettierignore
+.mocharc.cjs
+packages/*/test
+packages/*/docs
+temp
+workdir
