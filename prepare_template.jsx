@@ -88,14 +88,18 @@ var mainComp = prepare();
 if (mainComp) {
     app.project.save();
     
-    // Step 3a: Verify AEP Save
-    var aepFile = app.project.file;
-    var waitAEP = 0;
-    while (!aepFile.exists && waitAEP < 10) {
+    // Step 3a: Verify AEP is "Clean" (Saved to disk and flag cleared)
+    var waitClean = 0;
+    while (app.project.dirty && waitClean < 15) {
         $.sleep(1000);
-        waitAEP++;
+        waitClean++;
     }
-    log("AEP Save Verified. Proceeding to MOGRT.");
+    
+    if (app.project.dirty) {
+        log("WARNING: Project still marked as dirty after 15s. Export might trigger internal save.");
+    } else {
+        log("Project is Clean. Proceeding to MOGRT export.");
+    }
 
     // Export MOGRT
     try {
