@@ -5,14 +5,14 @@ const fs = require('fs');
 const multer = require('multer');
 
 const app = express();
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: path.join(__dirname, 'uploads/') });
 
 const AE_BINARY = "C:\\Program Files\\Adobe\\Adobe After Effects 2026\\Support Files\\aerender.exe";
 const SCANNER_SCRIPT = "C:\\Users\\David\\GitHubProjects\\nexrender\\scanner.jsx";
 const PREPARE_SCRIPT = "C:\\Users\\David\\GitHubProjects\\nexrender\\prepare_template.jsx";
 const MANIFEST_PATH = "C:\\Users\\David\\GitHubProjects\\nexrender\\template_manifest.json";
 
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
 // 2. PREPARE TEMPLATE (Essential Graphics)

@@ -81,12 +81,14 @@ function prepare() {
     }
 
     log("--- PREPARATION COMPLETE ---");
-    return true;
+    return mainComp;
 }
 
-if (prepare()) {
+var mainComp = prepare();
+if (mainComp) {
     app.project.save();
-    
+    $.sleep(5000); // Wait for the AEP save to finish on disk
+
     // Export MOGRT
     try {
         var mogrtDir = new Folder("C:/Users/David/MoDeck Sync/Automated mogrts");
@@ -94,17 +96,26 @@ if (prepare()) {
 
         var mogrtName = app.project.file.name.replace(".aep", ".mogrt");
         var mogrtFile = new File(mogrtDir.fsName + "/" + mogrtName);
-        
-        log("EXPORTING MOGRT for: " + app.project.activeItem.name);
-        app.project.activeItem.exportAsMotionGraphicsTemplate(true, mogrtFile.fsName);
+
+        log("EXPORTING MOGRT for: " + mainComp.name);
+        mainComp.exportAsMotionGraphicsTemplate(true, mogrtFile.fsName);
+
+        // MOGRT export is often backgrounded by AE; we must wait to keep the process alive
+        $.sleep(10000); 
         log("MOGRT EXPORTED TO: " + mogrtFile.fsName);
     } catch(e) {
         log("MOGRT EXPORT ERROR: " + e.toString());
     }
 
+
     log("DONE. AE will remain open for AI agent interaction.");
-    // app.quit(); // Removed to keep AE open
+    
+    // Create a small floating window to keep the script engine alive
+    var win = new Window("palette", "AI Video Factory", undefined);
+    win.add("statictext", undefined, "Template Prepared. AE is ready.");
+    win.show();
+    
+    app.activate();
 } else {
     log("Failed to prepare template.");
-    // app.quit(); // Removed to keep AE open
 }
