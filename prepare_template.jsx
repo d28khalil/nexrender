@@ -97,8 +97,19 @@ if (mainComp) {
         var mogrtDir = new Folder("C:/Users/David/MoDeck Sync/Automated mogrts");
         if (!mogrtDir.exists) mogrtDir.create();
 
-        var mogrtName = app.project.file.name.replace(".aep", ".mogrt");
+        // FIX: Handle cases where app.project.file is null (unsaved templates)
+        var baseName = "Template";
+        if (app.project.file) {
+            baseName = app.project.file.name.replace(".aep", "").replace(".aet", "");
+        } else {
+            // Try to use the mainComp name if project isn't saved yet
+            baseName = mainComp.name.replace(/\s+/g, "_");
+        }
+        
+        var mogrtName = baseName + ".mogrt";
         var mogrtFile = new File(mogrtDir.fsName + "/" + mogrtName);
+        
+        log("MOGRT DESTINATION: " + mogrtFile.fsName);
 
         // Refocus the comp right before export
         mainComp.openInViewer();
@@ -107,6 +118,12 @@ if (mainComp) {
         win.update();
 
         // AE will handle its own internal save-before-export here
+        // Note: If project has never been saved, this might prompt or fail
+        // To be safe, let's force a save if it's never been saved
+        if (!app.project.file) {
+             log("Project never saved. Export might fail. You should save manually once or we can try to force it.");
+        }
+
         mainComp.exportAsMotionGraphicsTemplate(true, mogrtFile.fsName);
 
         // ACTIVE VERIFICATION LOOP: Keep AE open until the file exists
