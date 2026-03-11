@@ -84,6 +84,8 @@ function prepare() {
     return mainComp;
 }
 
+var mainComp = prepare();
+if (mainComp) {
     // Create the palette BEFORE the heavy operations to serve as a keep-alive
     var win = new Window("palette", "AI Video Factory", undefined);
     var statusText = win.add("statictext", undefined, "Preparing for Export...");
