@@ -84,22 +84,11 @@ function prepare() {
     return mainComp;
 }
 
-var mainComp = prepare();
-if (mainComp) {
-    app.project.save();
-    
-    // Step 3a: Verify AEP is "Clean" (Saved to disk and flag cleared)
-    var waitClean = 0;
-    while (app.project.dirty && waitClean < 15) {
-        $.sleep(1000);
-        waitClean++;
-    }
-    
-    if (app.project.dirty) {
-        log("WARNING: Project still marked as dirty after 15s. Export might trigger internal save.");
-    } else {
-        log("Project is Clean. Proceeding to MOGRT export.");
-    }
+    // Create the palette BEFORE the heavy operations to serve as a keep-alive
+    var win = new Window("palette", "AI Video Factory", undefined);
+    var statusText = win.add("statictext", undefined, "Preparing for Export...");
+    win.show();
+    app.activate();
 
     // Export MOGRT
     try {
@@ -112,25 +101,37 @@ if (mainComp) {
         // Refocus the comp right before export
         mainComp.openInViewer();
         log("EXPORTING MOGRT for: " + mainComp.name);
-        
+        statusText.text = "Exporting MOGRT... Please wait.";
+        win.update();
+
+        // AE will handle its own internal save-before-export here
         mainComp.exportAsMotionGraphicsTemplate(true, mogrtFile.fsName);
 
-        // Extended wait for MOGRT compression and disk write
-        $.sleep(15000); 
-        log("MOGRT EXPORTED TO: " + mogrtFile.fsName);
+        // ACTIVE VERIFICATION LOOP: Keep AE open until the file exists
+        var exportWait = 0;
+        var maxExportWait = 30; // 30 * 2s = 60s max wait
+        while (!mogrtFile.exists && exportWait < maxExportWait) {
+            $.sleep(2000);
+            exportWait++;
+            statusText.text = "Exporting... " + (exportWait * 2) + "s / 60s";
+            win.update();
+        }
+
+        if (mogrtFile.exists) {
+            log("MOGRT EXPORT SUCCESS: Verified on disk.");
+            statusText.text = "MOGRT Exported. AE Ready.";
+        } else {
+            log("MOGRT EXPORT TIMEOUT: File not found after 60s.");
+            statusText.text = "Export Timeout. Check logs.";
+        }
+        win.update();
     } catch(e) {
         log("MOGRT EXPORT ERROR: " + e.toString());
+        statusText.text = "Export Error: " + e.toString();
+        win.update();
     }
 
-
     log("DONE. AE will remain open for AI agent interaction.");
-    
-    // Create a small floating window to keep the script engine alive
-    var win = new Window("palette", "AI Video Factory", undefined);
-    win.add("statictext", undefined, "Template Prepared. AE is ready.");
-    win.show();
-    
-    app.activate();
 } else {
     log("Failed to prepare template.");
 }
