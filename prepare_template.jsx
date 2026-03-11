@@ -89,19 +89,22 @@ if (prepare()) {
     
     // Export MOGRT
     try {
-        var mogrtFile = new File(app.project.file.fsName.replace(".aep", ".mogrt"));
+        var mogrtDir = new Folder("C:/Users/David/MoDeck Sync/Automated mogrts");
+        if (!mogrtDir.exists) mogrtDir.create();
+
+        var mogrtName = app.project.file.name.replace(".aep", ".mogrt");
+        var mogrtFile = new File(mogrtDir.fsName + "/" + mogrtName);
+        
         log("EXPORTING MOGRT for: " + app.project.activeItem.name);
-        // We use activeItem which should be the mainComp we just opened
         app.project.activeItem.exportAsMotionGraphicsTemplate(true, mogrtFile.fsName);
         log("MOGRT EXPORTED TO: " + mogrtFile.fsName);
     } catch(e) {
         log("MOGRT EXPORT ERROR: " + e.toString());
     }
 
-    log("DONE. Quitting in 5 seconds to allow file write...");
-    $.sleep(5000);
-    app.quit();
+    log("DONE. AE will remain open for AI agent interaction.");
+    // app.quit(); // Removed to keep AE open
 } else {
     log("Failed to prepare template.");
-    app.quit();
+    // app.quit(); // Removed to keep AE open
 }
