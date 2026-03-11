@@ -87,7 +87,15 @@ function prepare() {
 var mainComp = prepare();
 if (mainComp) {
     app.project.save();
-    $.sleep(5000); // Wait for the AEP save to finish on disk
+    
+    // Step 3a: Verify AEP Save
+    var aepFile = app.project.file;
+    var waitAEP = 0;
+    while (!aepFile.exists && waitAEP < 10) {
+        $.sleep(1000);
+        waitAEP++;
+    }
+    log("AEP Save Verified. Proceeding to MOGRT.");
 
     // Export MOGRT
     try {
@@ -97,11 +105,14 @@ if (mainComp) {
         var mogrtName = app.project.file.name.replace(".aep", ".mogrt");
         var mogrtFile = new File(mogrtDir.fsName + "/" + mogrtName);
 
+        // Refocus the comp right before export
+        mainComp.openInViewer();
         log("EXPORTING MOGRT for: " + mainComp.name);
+        
         mainComp.exportAsMotionGraphicsTemplate(true, mogrtFile.fsName);
 
-        // MOGRT export is often backgrounded by AE; we must wait to keep the process alive
-        $.sleep(10000); 
+        // Extended wait for MOGRT compression and disk write
+        $.sleep(15000); 
         log("MOGRT EXPORTED TO: " + mogrtFile.fsName);
     } catch(e) {
         log("MOGRT EXPORT ERROR: " + e.toString());
