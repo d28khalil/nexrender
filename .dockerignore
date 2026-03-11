@@ -1,4 +1,4 @@
-node_modules
+**/node_modules
 npm-debug.log
 .git
 .github
@@ -12,3 +12,10 @@ packages/*/test
 packages/*/docs
 temp
 workdir
+packages/nexrender-core/test/workpath/
+*.zip
+*.mp4
+*.png
+*.jpg
+.DS_Store
+Thumbs.db

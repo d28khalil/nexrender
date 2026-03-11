@@ -24,3 +24,4 @@ yarn.lock
 
 packages/nexrender-core/test/workpath/
 packages/nexrender-provider-s3/test/manual.js
+gui-bridge/uploads/*

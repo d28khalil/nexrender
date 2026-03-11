@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Video Factory - Lazy Man's Edition</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --border: #334155;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container { max-width: 800px; width: 100%; }
+        h1 { font-weight: 800; color: var(--primary); margin-bottom: 0.5rem; }
+        p.subtitle { color: #94a3b8; margin-bottom: 2rem; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 1rem; padding: 2rem; margin-bottom: 2rem; }
+        #drop-zone { border: 2px dashed var(--primary); border-radius: 0.75rem; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s; }
+        #drop-zone:hover { background: rgba(99, 102, 241, 0.1); }
+        #drop-zone.active { background: rgba(99, 102, 241, 0.2); }
+        .btn { background: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; }
+        textarea { width: 100%; background: #0f172a; border: 1px solid var(--border); color: white; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; min-height: 100px; }
+        #status { margin-top: 1rem; font-family: monospace; font-size: 0.9rem; }
+        pre { background: #000; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; max-height: 300px; font-size: 0.8rem; }
+        .loading { display: inline-block; animation: spin 1s linear infinite; margin-right: 0.5rem; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        input[type="text"] { width: 100%; background: #0f172a; border: 1px solid var(--border); color: white; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 AI Video Factory</h1>
+        <p class="subtitle">Drop a template or paste its path to start.</p>
+
+        <div class="card">
+            <h3>Step 1: Select Template</h3>
+            <div id="drop-zone">Drag & Drop your <b>.aep</b> or <b>.aet</b> here</div>
+            <p style="text-align:center; margin: 1rem 0;">- OR PASTE LOCAL PATH -</p>
+            <input type="text" id="file-path" placeholder="C:\Users\David\Desktop\MyTemplate.aep">
+            <button id="path-scan-btn" class="btn" style="width:100%;">Scan Local File</button>
+            <input type="file" id="file-input" hidden accept=".aep,.aet">
+            <div id="status"></div>
+        </div>
+
+        <div id="mapping-section" class="card" style="display:none;">
+            <h3>Step 2: AI Preparation</h3>
+            <button id="prepare-btn" class="btn" style="background:#10b981; margin-bottom:1rem; width:100%;">AI Agent: Auto-Prepare Essential Graphics</button>
+            <h3>Step 3: Description & Render</h3>
+            <textarea id="description" placeholder="Describe your video changes here..."></textarea>
+            <button id="render-btn" class="btn">Generate Render</button>
+            <pre id="manifest-display" style="margin-top:1rem;"></pre>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const status = document.getElementById('status');
+        const pathInput = document.getElementById('file-path');
+        const pathBtn = document.getElementById('path-scan-btn');
+        const mappingSection = document.getElementById('mapping-section');
+        const manifestDisplay = document.getElementById('manifest-display');
+        const prepareBtn = document.getElementById('prepare-btn');
+
+        dropZone.onclick = () => fileInput.click();
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('active'); };
+        dropZone.ondrop = (e) => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); };
+        fileInput.onchange = (e) => handleFile(e.target.files[0]);
+
+        async function handleFile(file) {
+            status.innerHTML = '⏳ Uploading...';
+            const formData = new FormData();
+            formData.append('template', file);
+            await fetch('/api/upload-template', { method: 'POST', body: formData });
+            status.innerHTML = '⏳ After Effects is scanning... (30-60s)';
+            pollStatus();
+        }
+
+        pathBtn.onclick = async () => {
+            const path = pathInput.value;
+            if (!path) return alert("Please enter a file path.");
+            status.innerHTML = '⏳ Triggering local scan...';
+            await fetch('/api/scan-path', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: path }) 
+            });
+            status.innerHTML = '⏳ After Effects is scanning... (30-60s)';
+            pollStatus();
+        };
+
+        prepareBtn.onclick = async () => {
+            status.innerHTML = '⏳ AI Agent is exposing Essential Graphics...';
+            await fetch('/api/prepare-template', { method: 'POST' });
+            // We can't easily check preparation status yet, so just alert for now
+            alert("AI Preparation triggered. Check AE window for progress.");
+            status.innerHTML = '✅ Preparation triggered.';
+        };
+
+        async function pollStatus() {
+            const res = await fetch('/api/check-status');
+            const data = await res.json();
+            if (data.status === "complete") {
+                status.innerHTML = '✅ Scan Complete!';
+                mappingSection.style.display = 'block';
+                manifestDisplay.textContent = JSON.stringify(data.manifest, null, 2);
+            } else {
+                setTimeout(pollStatus, 3000);
+            }
+        }
+    </script>
+</body>
+</html>
